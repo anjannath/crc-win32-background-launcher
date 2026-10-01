@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 )
 
@@ -25,12 +26,19 @@ func main() {
 	if binaryPath == "" {
 		panic("missing binary name")
 	}
-	cmd := exec.Command(binaryPath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		panic(err.Error())
+
+	if filepath.Base(binaryPath) == "crc.exe" {
+		// deepcode ignore go/CommandInjection: this launcher's sole purpose is to run
+		// the binary named on the CLI; exec.Command passes args directly, not via a shell.
+		cmd := exec.Command(binaryPath, args...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000}
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		panic("can only launch crc.exe")
 	}
 }
